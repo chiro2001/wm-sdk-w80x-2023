@@ -1,3 +1,4 @@
 .vs
 bin
-tools/w800/
+/tools/w800/.config
+

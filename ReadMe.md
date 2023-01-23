@@ -5,7 +5,7 @@ install miniterm:
 set permissions:
 	chmod 755 tools/w800/mconfig.sh
 add user to dialout group (and relogin)
-	sudo -E usermod -a -G pulse $LOGNAME
+	sudo -E usermod -a -G dialout $LOGNAME
 configure port and toolchain path
 	make menuconfig
 
