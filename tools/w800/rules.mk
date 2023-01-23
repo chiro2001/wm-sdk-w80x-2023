@@ -137,6 +137,7 @@ help:
 	@echo  '  list       - List locally available serial ports'
 	@echo  '  run        - Flash the firmware to the device after compilation'
 	@echo  '               and capture the log output by the device'
+	@echo  '  mon        - monitor USB port ttyUSB0 output at 115200 baud using miniterm'
 
 lib: .subdirs $(OBJS) $(OLIBS)
 ifeq ($(USE_NIMBLE), 1)
@@ -145,7 +146,7 @@ ifeq ($(USE_NIMBLE), 1)
 else
 	@cp $(LIBODIR)/libapp_br_edr$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
 	@cp $(LIBODIR)/libbthost_br_edr$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
-endif	
+endif
 	@cp $(LIBODIR)/libwmarch$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
 	@cp $(LIBODIR)/libwmcommon$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
 	@cp $(LIBODIR)/libdrivers$(LIB_EXT) $(TOP_DIR)/lib/$(CONFIG_ARCH_TYPE)
@@ -183,6 +184,8 @@ flash:all
 erase:
 	@$(WM_TOOL) -c $(DL_PORT) -rs at -eo all
 
+mon:
+	miniterm --rts 0 /dev/ttyUSB0 115200
 .subdirs:
 	@set -e; $(foreach d, $(SUBDIRS), $(MAKE) -C $(d);)
 
