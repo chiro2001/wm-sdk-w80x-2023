@@ -201,12 +201,12 @@ int demo_cmd_execute(Demo_Console *sys)
 
     for(i = 0; ; i++)
     {
-    	strfirst = (u8 *)strstr((char *)sys->rx_buf, console_tbl[i].cmd);	
+    	strfirst = (u8 *)strstr((char *)sys->rx_buf, console_tbl[i].cmd);
         if (strfirst != NULL)
         {
 			/*remove \r\n from input string*/
 			str_r = (u8 *)strchr((char *)strfirst, '\r');
-			str_n = (u8 *)strchr((char *)strfirst, '\n');			
+			str_n = (u8 *)strchr((char *)strfirst, '\n');
 			if (str_r&&(str_n == NULL))
 			{
 				if (str_r > strfirst)
@@ -219,7 +219,7 @@ int demo_cmd_execute(Demo_Console *sys)
 				if (str_n > strfirst)
 				{
 					strfirst[str_n - strfirst] = '\0';
-				}				
+				}
 			}
 			else if (str_r && str_n)
 			{
@@ -432,6 +432,7 @@ void demo_console_task(void *sdata)
             while(1)
             {
                 ret = tls_uart_read(TLS_UART_0, gstConsole.rx_buf + gstConsole.rptr, gstConsole.rx_data_len);
+		printf("tls_uart_read(...) returns %d, rx_data_len == %d\n", ret, gstConsole.rx_data_len);
                 if(ret <= 0)
                     break;
                 gstConsole.rx_data_len -= ret;
