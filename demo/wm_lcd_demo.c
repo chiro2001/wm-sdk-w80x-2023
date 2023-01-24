@@ -31,9 +31,9 @@ void lcd_test(void)
 	int i,j;
 	tls_lcd_options_t lcd_opts = {
 	    true,
-	    BIAS_ONEFOURTH,
-	    DUTY_ONEEIGHTH,
-	    VLCD31,
+	    BIAS_ONETHIRD,
+	    DUTY_ONEFOURTH,
+	    VLCD33,
 	    4,
 	    60,
 	};
@@ -53,8 +53,8 @@ void lcd_test(void)
 	tls_open_peripheral_clock(TLS_PERIPHERAL_TYPE_LCD);
 
 	/*enable output valid*/
-	tls_reg_write32(HR_LCD_COM_EN, 0xF);
-	tls_reg_write32(HR_LCD_SEG_EN, 0x3F);
+	tls_reg_write32(HR_LCD_COM_EN, 0xF);	// 4 COMs
+	tls_reg_write32(HR_LCD_SEG_EN, 0xFF);	// 8 segs
 
     tls_lcd_init(&lcd_opts);
 
@@ -62,17 +62,17 @@ void lcd_test(void)
 	{
 		for(i=0; i<4; i++)
 		{
-			for(j=0; j<6; j++)
+			for(j=0; j<9; j++)
 			{
 				tls_lcd_seg_set(i, j, 1);
 				tls_os_time_delay(500);
 				printf("%d %d %d\n", i, j, 1);
 			}
 		}
-		
+
 		for(i=0; i<4; i++)
 		{
-			for(j=0; j<6; j++)
+			for(j=0; j<9; j++)
 			{
 				tls_lcd_seg_set(i, j, 0);
 				tls_os_time_delay(500);
