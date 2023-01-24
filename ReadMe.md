@@ -16,3 +16,4 @@ configure port and toolchain path
 
 	make menuconfig
 
+![w801 pinout](doc/w801_pinout.png?raw=true "Pinout")
