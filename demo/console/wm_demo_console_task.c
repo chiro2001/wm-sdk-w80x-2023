@@ -19,10 +19,25 @@ static tls_os_queue_t 	*demo_q = NULL;
 static OS_STK 			DemoTaskStk[DEMO_TASK_SIZE];
 static Demo_Console 	gstConsole;
 #define DEMO_CONSOLE_BUF_SIZE   512
+u8	tmbuf[16];
+u8	ii=0;
 
 extern int strtodec(int *dec, char *str);
 
 
+/*	Arduino-like function
+*
+*	uart_no: current port
+*	buf: buffer for reading
+*	len: size of this buffer
+
+int serial_readline(u16 uart_no, u8 *buf, u16 len){
+	while(1){	// almost everlasting looop
+		if()	//...
+	}
+	return 0;
+}
+*/
 void demo_console_malloc(void)
 {
     gstConsole.rx_buf = tls_mem_alloc(DEMO_CONSOLE_BUF_SIZE + 1);
@@ -33,17 +48,31 @@ void demo_console_malloc(void)
     }
     memset(gstConsole.rx_buf, 0, DEMO_CONSOLE_BUF_SIZE + 1);
 }
-
+// Interrupt Handler!
+// TODO: check buffer size!
 s16 demo_console_rx(u16 len, void* user_data)
 {
-    gstConsole.rx_data_len += len;
-
+//    gstConsole.rx_data_len += len;
+	//printf("sz:%d, data:%s\n", len, (char *)user_data);
+	tls_uart_read(TLS_UART_0, tmbuf, len);
+	for(u16 i = 0; i<len; i++){
+		if(tmbuf[i] == '\n'){
+			printf("rcvd:%s\n", (char *)gstConsole.rx_buf);
+			gstConsole.rx_buf[ii++] = 0;
+			ii=0;
+			tls_os_queue_send(demo_q, (void *)1, 0);
+		}
+		else{
+        	gstConsole.rx_buf[ii++] = tmbuf[i];
+    	}
+	}
+	/*
     if (gstConsole.MsgNum < 3)
     {
         gstConsole.MsgNum ++;
         tls_os_queue_send(demo_q, (void *)1, 0);
     }
-
+	*/
     return 0;
 }
 
@@ -425,14 +454,16 @@ void demo_console_task(void *sdata)
 
     for(;;)
     {
-        tls_os_queue_receive(demo_q, (void **)&msg, 0, 0);
+        tls_os_queue_receive(demo_q, (void **)&msg, 0, 0); // message must signal whole string is in buffer yet! No reading!
         switch((u32)msg)
         {
         case 1:
             while(1)
             {
                 ret = tls_uart_read(TLS_UART_0, gstConsole.rx_buf + gstConsole.rptr, gstConsole.rx_data_len);
-		printf("tls_uart_read(...) returns %d, rx_data_len == %d\n", ret, gstConsole.rx_data_len);
+				// debug out
+				printf("tls_uart_read(...) returns %d, rx_data_len == %d\n", ret, gstConsole.rx_data_len);
+
                 if(ret <= 0)
                     break;
                 gstConsole.rx_data_len -= ret;
@@ -444,7 +475,7 @@ void demo_console_task(void *sdata)
             if(gstConsole.rptr == 0)
                 break;
             ret = demo_cmd_execute(&gstConsole);	//parse command and execute if needed
-            if(DEMO_CONSOLE_CMD == ret)	
+            if(DEMO_CONSOLE_CMD == ret)
             {
                 /*modify*/
                 //printf("Demo cmd is finished\r\n");
