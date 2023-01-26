@@ -185,7 +185,7 @@ erase:
 	@$(WM_TOOL) -c $(DL_PORT) -rs rts -eo all
 
 mon:
-	miniterm --rts 0 /dev/$(DL_PORT) 115200
+	miniterm -e --rts 0 /dev/$(DL_PORT) 115200
 .subdirs:
 	@set -e; $(foreach d, $(SUBDIRS), $(MAKE) -C $(d);)
 
