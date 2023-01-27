@@ -1,4 +1,4 @@
-w801 SDK
+w801 SDK v1.0.10+
 
 install miniterm:
 
