@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     wm_lcd.c
  * @author
- * @version  
- * @date  
+ * @version
+ * @date
  * @brief
  *
  * Copyright (c) 2014 Winner Microelectronics Co., Ltd. All rights reserved.
@@ -15,6 +15,11 @@
 #include "wm_io.h"
 #include "wm_pmu.h"
 
+// lcd4x8.h
+int show_sym_by_bitmap(uint8_t bitmap, uint8_t pos);	// pos is 1-based
+int show_sym_by_asc(char sym, uint8_t pos);
+void clean_pos(uint8_t pos);
+
 /*********************************************************
   Available COM and SEGMENT
 
@@ -24,6 +29,8 @@
   SEG08:PA_12  SEG09:PA_13  SEG10:PA_14  SEG11:PA_15  SEG12:PB_00  SEG13:PB_01  SEG14:PB_02  SEG15:PB_03
   SEG16:PB_04  SEG17:PB_05  SEG18:PB_06  SEG19:PB_07  SEG20:PB_08  SEG21:PB_09  SEG22:PB_10  SEG23:PB_11
   SEG24:PB_12  SEG25:PB_13  SEG26:PB_14  SEG27:PB_15  SEG28:PB_16  SEG29:PB_17  SEG30:PB_18  SEG31:PA_06
+
+  *W801 has only COM0..COM3 lines
  ********************************************************/
 /*test lcd output after cfg lcd and make lcd pin output fixed state*/
 void lcd_test(void)
@@ -43,21 +50,25 @@ void lcd_test(void)
 	tls_io_cfg_set(WM_IO_PB_22, WM_IO_OPTION6);
 	tls_io_cfg_set(WM_IO_PB_27, WM_IO_OPTION6);
 
-	/* SEG 0-5 */
+	/* SEG 0-7 */
 	tls_io_cfg_set(WM_IO_PB_23, WM_IO_OPTION6);
 	tls_io_cfg_set(WM_IO_PB_26, WM_IO_OPTION6);
 	tls_io_cfg_set(WM_IO_PB_24, WM_IO_OPTION6);
 	tls_io_cfg_set(WM_IO_PA_07, WM_IO_OPTION6);
 	tls_io_cfg_set(WM_IO_PA_08, WM_IO_OPTION6);
-	tls_io_cfg_set(WM_IO_PA_09, WM_IO_OPTION6);	
+	tls_io_cfg_set(WM_IO_PA_09, WM_IO_OPTION6);
+    tls_io_cfg_set(WM_IO_PA_10, WM_IO_OPTION6);
+    tls_io_cfg_set(WM_IO_PA_11, WM_IO_OPTION6);
+
 	tls_open_peripheral_clock(TLS_PERIPHERAL_TYPE_LCD);
 
 	/*enable output valid*/
-	tls_reg_write32(HR_LCD_COM_EN, 0xF);	// 4 COMs
+    tls_reg_write32(HR_LCD_COM_EN, 0xF);	// 4 COMs
 	tls_reg_write32(HR_LCD_SEG_EN, 0xFF);	// 8 segs
 
     tls_lcd_init(&lcd_opts);
 
+	/*
 	while(1)
 	{
 		for(i=0; i<4; i++)
@@ -80,6 +91,38 @@ void lcd_test(void)
 			}
 		}
 	}
+	*/
+	//show_sym_by_bitmap(0x3F, 1); // draw "0" on 1st pos
+	while(1){
+		show_sym_by_asc('0', 0);
+		show_sym_by_asc('1', 1);
+		show_sym_by_asc('2', 2);
+		show_sym_by_asc('3', 3);
+		tls_os_time_delay(500);
+		clean_pos(0);
+		clean_pos(1);
+		clean_pos(2);
+		clean_pos(3);
+		show_sym_by_asc('9', 0);
+		show_sym_by_asc('8', 1);
+		show_sym_by_asc('7', 2);
+		show_sym_by_asc('6', 3);
+		tls_os_time_delay(500);
+		clean_pos(0);
+        clean_pos(1);
+        clean_pos(2);
+        clean_pos(3);
+        show_sym_by_asc('-', 0);
+        show_sym_by_asc('5', 1);
+        show_sym_by_asc(0xb0, 2);
+        show_sym_by_asc('C', 3);
+        tls_os_time_delay(500);
+        clean_pos(0);
+        clean_pos(1);
+        clean_pos(2);
+        clean_pos(3);
+	}
+
+	//                       GFEDCBA segments
 }
 #endif
-

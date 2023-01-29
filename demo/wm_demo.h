@@ -100,7 +100,7 @@
 
 #define DEMO_DSP					(DEMO_ON && DEMO_CONSOLE)
 
-#define DEMO_BT                     DEMO_OFF //(DEMO_ON && DEMO_CONSOLE)
+#define DEMO_BT                     (DEMO_OFF && DEMO_CONSOLE)
 
 #define DEMO_AVOID_COPY             (DEMO_OFF && DEMO_CONSOLE)
 
