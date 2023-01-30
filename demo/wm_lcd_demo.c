@@ -19,6 +19,7 @@
 int show_sym_by_bitmap(uint8_t bitmap, uint8_t pos);	// pos is 1-based
 int show_sym_by_asc(char sym, uint8_t pos);
 void clean_pos(uint8_t pos);
+uint8_t lcd_strlen(char *s);
 
 /*********************************************************
   Available COM and SEGMENT
@@ -121,6 +122,8 @@ void lcd_test(void)
         clean_pos(1);
         clean_pos(2);
         clean_pos(3);
+
+		printf("lcd_strlen() == %x\n", lcd_strlen("3.14159265"));
 	}
 
 	//                       GFEDCBA segments

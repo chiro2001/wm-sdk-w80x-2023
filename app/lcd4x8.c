@@ -61,3 +61,28 @@ void clean_pos(uint8_t pos){
 		tls_lcd_seg_set(com_by_seg(i), (pos<<1) + _segs[i], 0);
 	}
 }
+
+// strlen, but dot position matters
+uint8_t lcd_strlen(char *s){
+
+	uint8_t	rz = 0, dotp = 0;
+
+	for(uint8_t i=0; i< strlen(s); i++){
+		if(s[i] != '.'){
+			rz++;
+			if(rz == 5) break;	// so long
+		}
+		else{	// dot found
+			if(i==0){	// dot at front of string
+				dotp = 1;
+			} else if(i < 4){
+				dotp = i;
+			}
+			// if i >= 4, we don't reach a dot
+		}
+	}
+	return (dotp << 4) | rz;
+}
+
+//TODO: если точка присутствует, включить ее в правильной позиции, скорректировать strlen, вычислить позицию первого печатного знака
+// startpos = 4-lcd_strlen для правого выравнивания, 1.5 это позиция 2, точка в позиции 2
