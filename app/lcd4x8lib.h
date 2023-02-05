@@ -19,8 +19,11 @@ extern "C" {
 	void clean_pos(uint8_t pos);
 	uint8_t lcd_strlen(const char* s); // char or const char?
 	bool is_printable(char c);
-	int lcd_show_str(const char* s);
+	int lcd_show_str_(const char* s, uint8_t tail);
 	int lcd_show_dot(uint8_t dp);
+
+#define lcd_show_str(str) lcd_show_str_(str, 0) 
+#define lcd_show_tail(str) lcd_show_str_(str, 1) 
 
 #ifdef __cplusplus
 }
