@@ -37,9 +37,6 @@ uint8_t lcd_strlen(const char* s) {
 	return (dotp << 4) | rz;
 }
 
-//TODO: если точка присутствует, включить ее в правильной позиции, скорректировать strlen, вычислить позицию первого печатного знака
-// startpos = 4-lcd_strlen для правого выравнивания, 1.5 это позиция 2, точка в позиции 2
-
 // clear all dot segments (exclude colon sign)
 void lcd_clear_dots() {
 	for (uint8_t i = 2; i < LCD_MAX_POS * 2 + 1; i += 2) {
@@ -47,7 +44,7 @@ void lcd_clear_dots() {
 	}
 }
 
-// dp = 1, значит включить после 0 позиции, перед 1-й, segm=2
+// if dp = 1, dot will be shown before 1st pos, segm=2
 int lcd_show_dot(uint8_t dp) {
 	printf("show segm at %d\n", dp << 1);
 	//tls_lcd_seg_set(3, dp << 1, 1);
@@ -65,24 +62,58 @@ char get_next_prn_sym(const char *s, uint8_t *pos) {
 	
 	return ch;
 }
+// get ptr to last n symbols of 'in'
+const char *get_last_prn_ptr(const char* in, uint8_t n) {
+	const char* out = in + strlen(in); // last char '\0'
 
-int lcd_show_str(const char *s) {
+	while (n) {
+		do {
+			out--;
+		} while (!is_printable(*out));
+		n--;
+	}
+	return out;
+}
+
+int lcd_show_str_(const char *s, uint8_t tail) {
 
 	uint8_t curpos = 0;
 	uint8_t n = lcd_strlen(s);
-	if (n > LCD_MAX_POS + 2) {	// dot present
-		lcd_clear_dots();
-		lcd_show_dot(n >> 4);	// точка отображается, но без правого выравнивания
-	}
-	if ((n & 0xF) > LCD_MAX_POS + 1)
+	uint8_t startpos = 0;
+	uint8_t dotpos = (n >> 4);
+	n &= 15;
+	
+	if (n > LCD_MAX_POS + 1) {
+		// check tail value!
+		if (tail) {
+			printf("Warning: string will be truncated at left!\n");
+			const char *last = get_last_prn_ptr(s, LCD_MAX_POS + 1);
+			for (uint8_t i = startpos; i < LCD_MAX_POS + 1; i++) {
+				char sym = get_next_prn_sym(last, &curpos);		// get next printable sym from s
+				if (sym == 0) return 1;
+			}
+			return 1;
+		}
 		printf("Warning: string will be truncated!\n");
-
+		n--;
+	}
 	// if align right, calculate start_pos
-	for (uint8_t i = 0; i < LCD_MAX_POS + 1; i++) {
+	if(_lcd_align == LCD_ALIGN_RIGHT)
+		startpos = 4 - n;
+	// если startpos > 0, прибавить его к dotpos
+	if (startpos && dotpos)
+		dotpos += startpos;
+
+	if(dotpos){	// dot present
+		lcd_clear_dots();
+		lcd_show_dot(dotpos);
+	}
+
+	// printing
+	for (uint8_t i = startpos; i < LCD_MAX_POS + 1; i++) {
 		char sym = get_next_prn_sym(s, &curpos);		// get next printable sym from s
 		if (sym == 0) return 1;
 		//show_sym_by_asc(sym, i);
-		printf("show %c at pos %d\n", sym, i);
 	}
 	return 1;
 }
