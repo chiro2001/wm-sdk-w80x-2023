@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include <widemath.h>
+//#include <widemath.h>
+#include "wm_type_def.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include "lcd4x8lib.h"
