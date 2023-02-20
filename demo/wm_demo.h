@@ -5,7 +5,7 @@
 #define DEMO_OFF	0
 
 //demo console
-#define DEMO_CONSOLE				DEMO_ON
+#define DEMO_CONSOLE				DEMO_OFF
 
 //socket demo
 #define DEMO_STD_SOCKET_CLIENT	    (DEMO_OFF && DEMO_CONSOLE)
@@ -52,7 +52,7 @@
 #define DEMO_TIMER					(DEMO_OFF && DEMO_CONSOLE)
 
 //i2c demo
-#define DEMO_I2C					(DEMO_OFF && DEMO_CONSOLE)
+#define DEMO_I2C					(DEMO_ON && DEMO_CONSOLE)
 
 //pwm demo
 #define DEMO_PWM					(DEMO_OFF && DEMO_CONSOLE)
