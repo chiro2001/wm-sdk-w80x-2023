@@ -56,13 +56,31 @@ Obj/app_main.o: ../../../../../../../app/main.c \
  ../../../../../../../include/driver/wm_efuse.h \
  ../../../../../../../demo/wm_demo.h \
  ../../../../../../../include/wm_regs.h \
- ../../../../../../../include/driver/wm_i2c.h \
  ../../../../../../../include/wm_regs.h \
+ ../../../../../../../include/driver/wm_i2c.h \
  ../../../../../../../include/driver/wm_cpu.h \
  ../../../../../../../include/driver/wm_irq.h \
  ../../../../../../../include/driver/wm_gpio_afsel.h \
  ../../../../../../../include/driver/wm_gpio.h \
- ../../../../../../../platform/inc/tls_common.h
+ ../../../../../../../platform/inc/tls_common.h \
+ ../../../../../../../app/i2c_lib.h \
+ ../../../../../../../src/os/rtos/include/FreeRTOS.h \
+ ../../../../../../../src/os/rtos/include/FreeRTOSConfig.h \
+ ../../../../../../../src/os/rtos/include/projdefs.h \
+ ../../../../../../../src/os/rtos/include/portable.h \
+ ../../../../../../../src/os/rtos/include/deprecated_definitions.h \
+ ../../../../../../../src/os/rtos/include/portmacro.h \
+ ../../../../../../../include/arch/xt804/csi_core/csi_core.h \
+ ../../../../../../../src/os/rtos/include/mpu_wrappers.h \
+ ../../../../../../../src/os/rtos/include/task.h \
+ ../../../../../../../src/os/rtos/include/rtoslist.h \
+ ../../../../../../../src/os/rtos/include/list.h \
+ ../../../../../../../app/bmp280lib.h \
+ ../../../../../../../include/driver/wm_timer.h \
+ ../../../../../../../app/utimer.h \
+ ../../../../../../../include/driver/wm_lcd.h \
+ ../../../../../../../include/driver/wm_pmu.h \
+ ../../../../../../../app/lcd4x8.h
 
 ../../../../../../../include/wm_include.h:
 
@@ -178,9 +196,9 @@ Obj/app_main.o: ../../../../../../../app/main.c \
 
 ../../../../../../../include/wm_regs.h:
 
-../../../../../../../include/driver/wm_i2c.h:
-
 ../../../../../../../include/wm_regs.h:
+
+../../../../../../../include/driver/wm_i2c.h:
 
 ../../../../../../../include/driver/wm_cpu.h:
 
@@ -191,3 +209,39 @@ Obj/app_main.o: ../../../../../../../app/main.c \
 ../../../../../../../include/driver/wm_gpio.h:
 
 ../../../../../../../platform/inc/tls_common.h:
+
+../../../../../../../app/i2c_lib.h:
+
+../../../../../../../src/os/rtos/include/FreeRTOS.h:
+
+../../../../../../../src/os/rtos/include/FreeRTOSConfig.h:
+
+../../../../../../../src/os/rtos/include/projdefs.h:
+
+../../../../../../../src/os/rtos/include/portable.h:
+
+../../../../../../../src/os/rtos/include/deprecated_definitions.h:
+
+../../../../../../../src/os/rtos/include/portmacro.h:
+
+../../../../../../../include/arch/xt804/csi_core/csi_core.h:
+
+../../../../../../../src/os/rtos/include/mpu_wrappers.h:
+
+../../../../../../../src/os/rtos/include/task.h:
+
+../../../../../../../src/os/rtos/include/rtoslist.h:
+
+../../../../../../../src/os/rtos/include/list.h:
+
+../../../../../../../app/bmp280lib.h:
+
+../../../../../../../include/driver/wm_timer.h:
+
+../../../../../../../app/utimer.h:
+
+../../../../../../../include/driver/wm_lcd.h:
+
+../../../../../../../include/driver/wm_pmu.h:
+
+../../../../../../../app/lcd4x8.h:
