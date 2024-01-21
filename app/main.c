@@ -13,13 +13,22 @@
 *****************************************************************************/ 
 #include "wm_include.h"
 
+#include "vfd.h"
+
 void UserMain(void)
 {
-	printf("\n user task \n");
+	printf("hello w801\n");
+
+	vfd_init();
+	vfd_on();
+	vfd_clear();
+	vfd_display_str(0, "Hello~");
 	
-#if DEMO_CONSOLE
-	CreateDemoTask();
-#endif
+	printf("finish\n");
+	
+// #if DEMO_CONSOLE
+// 	CreateDemoTask();
+// #endif
 //用户自己的task
 }
 
