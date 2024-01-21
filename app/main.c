@@ -22,8 +22,16 @@ void UserMain(void)
 	vfd_init();
 	vfd_on();
 	vfd_clear();
-	vfd_display_str(0, "Hello~");
-	
+
+	const char *str = "Hello World! Hello World! ";
+	int len = strlen(str);
+	for (int k = 0; k < 100; k++) {
+		for (int i = 0; i < len / 2; i++) {
+			vfd_display_str(0, str + i);
+			tls_os_time_delay(100);
+		}
+	}
+
 	printf("finish\n");
 	
 // #if DEMO_CONSOLE
