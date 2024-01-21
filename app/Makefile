@@ -9,7 +9,7 @@ endif
 
 sinclude $(TOP_DIR)/tools/w800/rules.mk
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include
+INCLUDES := $(INCLUDES) -I $(PDIR)include -I$(TOP_DIR)
 
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile
