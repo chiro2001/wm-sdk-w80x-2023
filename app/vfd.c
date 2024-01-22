@@ -20,6 +20,7 @@ void _spi_write_u8_msb(u8 data) {
         tls_gpio_write(VFD_PIN_CP, 0);
         data <<= 1;
     }
+    tls_gpio_write(VFD_PIN_DA, 1);
 }
 void _spi_write_u8_lsb(u8 data) {
     for (u8 i = 0; i < 8; i++) {
@@ -28,6 +29,7 @@ void _spi_write_u8_lsb(u8 data) {
         tls_gpio_write(VFD_PIN_CP, 0);
         data >>= 1;
     }
+    tls_gpio_write(VFD_PIN_DA, 1);
 }
 
 #define _spi_write_u8 _spi_write_u8_lsb

@@ -25,7 +25,7 @@ void UserMain(void)
 
 	const char *str = "Hello World! Hello World! ";
 	int len = strlen(str);
-	for (int k = 0; k < 100; k++) {
+	for (;;) {
 		for (int i = 0; i < len / 2; i++) {
 			vfd_display_str(0, str + i);
 			tls_os_time_delay(100);
