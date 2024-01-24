@@ -30,6 +30,7 @@ typedef enum {
   MODE_SETTING_WEBCFG,
   MODE_SETTING_BRIGHTNESS,
   MODE_SETTING_NTP,
+  MODE_TEST_GRAY,
 } mode_t;
 
 typedef enum {
@@ -38,6 +39,7 @@ typedef enum {
   SETTING_BRIGHTNESS,
   SETTING_NTP,
   SETTING_DIRECTION,
+  SETTING_TEST_GRAY,
   SETTING_RESET,
   SETTING_BACK,
 } setting_item_t;
@@ -88,6 +90,9 @@ void setting_item_str(setting_item_t item, char *str) {
     break;
   case SETTING_DIRECTION:
     strcpy(str, "Set:Direction");
+    break;
+  case SETTING_TEST_GRAY:
+    strcpy(str, "Test:Gray Display");
     break;
   }
 }
@@ -353,6 +358,10 @@ void user_main_loop(void) {
             do_config_save();
             vfd_set_direction(g_config.direction);
             mode = MODE_DISPLAY_TIME;
+            break;
+          case SETTING_TEST_GRAY:
+            mode = MODE_TEST_GRAY;
+            break;
           }
           i = 0;
           click = 0;
@@ -475,12 +484,33 @@ void user_main_loop(void) {
         vfd_draw_or_bg(0, 0, x, 7);
       }
     } else if (mode == MODE_SETTING_NTP) {
-      sprintf(now, "NTP.....");
+      sprintf(now, "NTP sync");
       vfd_draw_str(0, 0, now);
       extern int ntp_demo(void);
       ntp_demo();
       tls_get_rtc(&last_ntp);
       mode = MODE_DISPLAY_TIME;
+    } else if (mode == MODE_TEST_GRAY) {
+      if (i == 0) {
+        for (u8 x = 0; x < VFD_WIDTH; x++) {
+          // color: x (0-VFD_WIDTH) -- mapping to --> (0-255)
+          u8 color = (u8)((u16)(x) * 256 / VFD_WIDTH);
+          printf("color for x:%d is %x\n", x, color);
+          for (u8 y = 0; y < 7; y++) {
+            if (y == 3)
+              vfd_draw_pixel(x, y, 0xff);
+            else if (y == 4)
+              vfd_draw_pixel(x, y, 0xff * 2 / VFD_GRAY);
+            else
+              vfd_draw_pixel(x, y, color);
+          }
+        }
+        i = 1;
+      }
+      if (btn && !btn_) {
+        mode = MODE_DISPLAY_TIME;
+        i = 0;
+      }
     }
     if (mode == MODE_SETTING) {
       u32 idle_period = tick - (btn_down_time > btn_up_time ? btn_down_time : btn_up_time);
