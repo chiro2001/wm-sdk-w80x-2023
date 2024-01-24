@@ -30,6 +30,7 @@ typedef enum {
   MODE_SETTING_WEBCFG,
   MODE_SETTING_BRIGHTNESS,
   MODE_SETTING_NTP,
+  MODE_SETTING_GRAY,
   MODE_TEST_GRAY,
   MODE_SHOW_DATE_TIME,
 } mode_t;
@@ -41,17 +42,19 @@ typedef enum {
   SETTING_BRIGHTNESS,
   SETTING_NTP,
   SETTING_DIRECTION,
+  SETTING_SET_GRAY,
   SETTING_TEST_GRAY,
   SETTING_RESET,
   SETTING_BACK,
 } setting_item_t;
 
 typedef struct {
-  u16 magic;
   char ssid[64];
   char passwd[128];
   u8 dimm;
   u8 direction;
+  u8 gray_level;
+  u16 magic;
 } config_t;
 extern u8 gucssidData[33];
 extern u8 gucpwdData[65];
@@ -61,11 +64,12 @@ extern u8 gucpwdData[65];
 // #define FLASH_CONFIG_ADDR 0X0fffff00
 #define CONFIG_MAGIC 0x55aa
 #define CONFIG_DEFAULT {    \
-  .magic = CONFIG_MAGIC,    \
   .ssid = "504B",           \
   .passwd = "2001106504B",  \
   .dimm = VFD_DIMMING,      \
   .direction = 1,           \
+  .gray_level = 8,          \
+  .magic = CONFIG_MAGIC,    \
 }
 const static config_t g_config_def = CONFIG_DEFAULT;
 config_t g_config = CONFIG_DEFAULT;
@@ -73,13 +77,13 @@ config_t g_config = CONFIG_DEFAULT;
 void setting_item_str(setting_item_t item, char *str) {
   switch (item) {
   case SETTING_BACK:
-    strcpy(str, "Go Back ");
+    strcpy(str, "[ Back ]");
     break;
   case SETTING_DATE:
     strcpy(str, "Show:Date Time");
     break;
   case SETTING_INFO:
-    strcpy(str, "Set:Show INFO");
+    strcpy(str, "Set:Show info");
     break;
   case SETTING_WEBCFG:
     strcpy(str, "Set:Web Config");
@@ -98,6 +102,9 @@ void setting_item_str(setting_item_t item, char *str) {
     break;
   case SETTING_TEST_GRAY:
     strcpy(str, "Test:Gray Display");
+    break;
+  case SETTING_SET_GRAY:
+    strcpy(str, "Set:Gray Level");
     break;
   }
 }
@@ -151,12 +158,12 @@ void setup_button_int(void) {
 
 void do_config_load() {
   int r;
-  if (TLS_FLS_STATUS_OK != (r = tls_fls_read(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(u16)))) {
+  if (TLS_FLS_STATUS_OK != (r = tls_fls_read(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(g_config)))) {
     printf("flash read failed: %d\n", r);
   }
   if (g_config.magic != CONFIG_MAGIC) {
     printf("g_config read failed, overwrite to 0x%x\n", FLASH_CONFIG_ADDR);
-    g_config.magic = CONFIG_MAGIC;
+    memcpy(&g_config, &g_config_def, sizeof(g_config));
     if (TLS_FLS_STATUS_OK != (r = tls_fls_write(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(g_config)))) {
       printf("flash write failed: %d\n", r);
     }
@@ -167,22 +174,27 @@ void do_config_load() {
   if (g_config.magic != CONFIG_MAGIC) {
     printf("g_config read still failed\n");
   }
-  printf("config load: %s %s magic:%x dimm:%d dir:%d\n", 
-    g_config.ssid, g_config.passwd, g_config.magic, g_config.dimm, g_config.direction);
+  printf("config load: %s %s magic:%x dimm:%d dir:%d gray:%d\n", 
+    g_config.ssid, g_config.passwd, g_config.magic, g_config.dimm, g_config.direction, g_config.gray_level);
 }
 
 void do_config_save() {
   int r;
-  printf("config save: %s %s magic:%x dimm:%d dir:%d\n", 
-    g_config.ssid, g_config.passwd, g_config.magic, g_config.dimm, g_config.direction);
+  printf("config save: %s %s magic:%x dimm:%d dir:%d gray:%d\n", 
+    g_config.ssid, g_config.passwd, g_config.magic, g_config.dimm, g_config.direction, g_config.gray_level);
   if (TLS_FLS_STATUS_OK != (r = tls_fls_write(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(g_config)))) {
     printf("flash write failed: %d\n", r);
   }
   if (TLS_FLS_STATUS_OK != (r = tls_fls_read(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(g_config)))) {
     printf("flash read failed: %d\n", r);
   }
-  printf("    re-load: %s %s magic:%x dimm:%d dir:%d\n", 
-    g_config.ssid, g_config.passwd, g_config.magic, g_config.dimm, g_config.direction);
+  printf("    re-load: %s %s magic:%x dimm:%d dir:%d gray:%d\n", 
+    g_config.ssid, g_config.passwd, g_config.magic, g_config.dimm, g_config.direction, g_config.gray_level);
+}
+
+void do_reset(void) {
+  tls_sys_set_reboot_reason(REBOOT_REASON_ACTIVE);
+  tls_sys_reset();
 }
 
 static void task_ap_config(void *sdata) {
@@ -205,8 +217,7 @@ static void task_ap_config(void *sdata) {
   } else {
     vfd_display_str(0, msg_ok);
   }
-  tls_sys_set_reboot_reason(REBOOT_REASON_ACTIVE);
-  tls_sys_reset();
+  do_reset();
 }
 
 #define AP_TASK_SIZE 2048
@@ -255,19 +266,6 @@ void user_main_loop(void) {
   char last[64] = "";
   int i = 0;
 
-  // for (u8 x = 0; x < VFD_WIDTH; x++) {
-  //   // color: x (0-VFD_WIDTH) -- mapping to --> (0-255)
-  //   u8 color = (u8)((u16)(x) * 256 / VFD_WIDTH);
-  //   printf("color for %d is %x\n", x, color);
-  //   for (u8 y = 0; y < 7; y++) {
-  //     if (y == 3)
-  //       vfd_draw_pixel(x, y, 0xff);
-  //     else if (y == 4)
-  //       vfd_draw_pixel(x, y, 0xff * 2 / VFD_GRAY);
-  //     else
-  //       vfd_draw_pixel(x, y, color);
-  //   }
-  // }
   vfd_daemon_start();
 
   // time_t now;
@@ -279,6 +277,7 @@ void user_main_loop(void) {
   const u32 long_idle = 5000;
   u32 dimm = VFD_DIMMING;
   char buf[64] = "";
+  u8 gray_level = g_config.gray_level;
 
   while (true) {
     u32 tick = tls_os_get_time();
@@ -355,8 +354,7 @@ void user_main_loop(void) {
           case SETTING_RESET:
             memcpy(&g_config, &g_config_def, sizeof(g_config));
             do_config_save();
-            tls_sys_set_reboot_reason(REBOOT_REASON_ACTIVE);
-            tls_sys_reset();
+            do_reset();
             break;
           case SETTING_DIRECTION:
             g_config.direction = !g_config.direction;
@@ -369,6 +367,10 @@ void user_main_loop(void) {
             break;
           case SETTING_DATE:
             mode = MODE_SHOW_DATE_TIME;
+            break;
+          case SETTING_SET_GRAY:
+            mode = MODE_SETTING_GRAY;
+            gray_level = g_config.gray_level;
             break;
           }
           i = 0;
@@ -475,6 +477,7 @@ void user_main_loop(void) {
           i = 0;
           click = 0;
           btn_ = btn;
+          // do_reset();
           continue;
         }
       }
@@ -508,7 +511,7 @@ void user_main_loop(void) {
             if (y == 3)
               vfd_draw_pixel(x, y, 0xff);
             else if (y == 4)
-              vfd_draw_pixel(x, y, 0xff * 2 / VFD_GRAY);
+              vfd_draw_pixel(x, y, 0xff * 2 / vfd_gray_level());
             else
               vfd_draw_pixel(x, y, color);
           }
@@ -539,6 +542,54 @@ void user_main_loop(void) {
       if (btn && !btn_) {
         mode = MODE_DISPLAY_TIME;
         i = 0;
+      }
+    } else if (mode == MODE_SETTING_GRAY) {
+      const static u8 gray_levels[] = {
+        0xff, 4, 6, 7, 8, 9, 10, 12, 16, 32
+      };
+      if (gray_levels[i] == 0xff) {
+        for (i = 0; i < sizeof(gray_levels); i++) {
+          if (gray_levels[i] == gray_level) {
+            break;
+          }
+        }
+        if (i == sizeof(gray_levels)) {
+          i = 1;
+        }
+      }
+      if (btn && !btn_) {
+        // key up
+        u32 period = btn_up_time - btn_down_time;
+        if (period < long_press) {
+          i++;
+          if (i == sizeof(gray_levels)) {
+            i = 1;
+          }
+          gray_level = gray_levels[i];
+          vfd_set_gray(gray_level);
+        } else {
+          g_config.gray_level = gray_level;
+          vfd_set_gray(g_config.gray_level);
+          do_config_save();
+          mode = MODE_DISPLAY_TIME;
+          i = 0;
+          click = 0;
+          btn_ = btn;
+          continue;
+        }
+      }
+      sprintf(now, "Gray:%3d", gray_level);
+      vfd_draw_str(0, 0, now);
+      vfd_draw_or_bg(0, 0, 5 * 5, 7);
+      if (!btn) {
+        u32 period = tick - btn_down_time;
+        if (period > long_press) {
+          period = long_press;
+        }
+        float p = (float)period / long_press;
+        // u32 x = period * VFD_WIDTH / long_press;
+        u32 x = (u32)((p * p * p) * (VFD_WIDTH - 5 * 5)) + 5 * 5;
+        vfd_draw_or_bg(5 * 5, 0, x, 7);
       }
     }
     if (mode == MODE_SETTING) {
@@ -579,6 +630,7 @@ void UserMain(void) {
 
   vfd_set_direction(g_config.direction);
   vfd_set_brightness(g_config.dimm);
+  vfd_set_gray(g_config.gray_level);
   setup_button_int();
 
   tls_netif_add_status_event(net_status_changed_event);

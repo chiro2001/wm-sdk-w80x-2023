@@ -9,6 +9,7 @@ const static u8 cmds[] = {VFD_SET_DISPLAY_TIMING,   (VFD_DIGITS - 1),
                           VFD_SET_DISPLAT_LIGHT_ON, 0x00};
 
 static u8 framebuf[5 * (VFD_FRAME_SZ)] = {0};
+static u8 vfd_gray = VFD_GRAY_MAX;
 
 // const static unsigned char lut8[8 * 8] = {
 //     0, 0, 0, 0, 0, 0, 0, 0, // 0
@@ -184,6 +185,9 @@ void vfd_init(void) {
 )
 
 void vfd_update_framebuf(u16 offset) {
+  if (vfd_mutex)
+    if (TLS_OS_ERROR == tls_os_mutex_acquire(vfd_mutex, 0))
+      printf("vfd mutex acquire failed\n");
   const u8 *data = framebuf + offset;
   if (vfd_direction == 0) {
     for (u8 i = 0; i < VFD_DIGITS; i++) {
@@ -203,6 +207,8 @@ void vfd_update_framebuf(u16 offset) {
     const u8 index[8] = {7, 6, 5, 4, 3, 2, 1, 0};
     spi_write_cmd(VFD_DCRAM_DATA_WRITE, index, VFD_DIGITS);
   }
+  if (vfd_mutex)
+    tls_os_mutex_release(vfd_mutex);
 }
 
 void vfd_set_direction(u8 direction) {
@@ -216,14 +222,14 @@ void vfd_draw_char(u8 x, int y, char ch) {
   u8 c = ch - ' ';
   const u8 *font = font5x7 + c * 5;
   if (y == 0) {
-    for (u8 i = 0; i < VFD_GRAY; i++) {
+    for (u8 i = 0; i < vfd_gray; i++) {
       memcpy(framebuf + i * VFD_WIDTH + x, font, 5);
     }
   } else {
     if (y < 0) {
       y = -y;
       // font higher
-      for (u8 i = 0; i < VFD_GRAY; i++) {
+      for (u8 i = 0; i < vfd_gray; i++) {
         for (u8 k = 0; k < 5; k++) {
           u8 *frame = framebuf + i * VFD_WIDTH + x + k;
           // *frame &= ((1 << y) - 1);
@@ -232,7 +238,7 @@ void vfd_draw_char(u8 x, int y, char ch) {
       }
     } else {
       // frame higher
-      for (u8 i = 0; i < VFD_GRAY; i++) {
+      for (u8 i = 0; i < vfd_gray; i++) {
         for (u8 k = 0; k < 5; k++) {
           u8 *frame = framebuf + i * VFD_WIDTH + x + k;
           *frame &= (~((1 << y) - 1)) << (7 - y);
@@ -253,14 +259,13 @@ void vfd_draw_str(u8 x, int y, const char *str) {
   }
 }
 
-void vfd_draw_pixel(u8 x, u8 y, u8 color) {
+void vfd_draw_pixel_gray(u8 x, u8 y, u8 gray) {
   if (vfd_mutex)
     if (TLS_OS_ERROR == tls_os_mutex_acquire(vfd_mutex, 0))
       printf("vfd mutex acquire failed\n");
-  u8 gray = (u16)color * VFD_GRAY / 255;
   u8 mask = 1 << y;
   // printf("color for %d is %x (gray %d)\n", x, color, gray);
-  for (u8 k = 0; k < VFD_GRAY; k++) {
+  for (u8 k = 0; k < vfd_gray; k++) {
     if (k < gray) {
       framebuf[x + k * VFD_WIDTH] |= mask;
     } else {
@@ -271,10 +276,15 @@ void vfd_draw_pixel(u8 x, u8 y, u8 color) {
     tls_os_mutex_release(vfd_mutex);
 }
 
+void vfd_draw_pixel(u8 x, u8 y, u8 color) {
+  u8 gray = (u16)color * vfd_gray / 255;
+  vfd_draw_pixel_gray(x, y, gray);
+}
+
 void vfd_draw_inverse(u8 sx, u8 sy, u8 ex, u8 ey) {
   for (u8 x = sx; x < ex; x++) {
     if (sy == 0 && ey >= 7) {
-      for (u8 k = 0; k < VFD_GRAY; k++) {
+      for (u8 k = 0; k < vfd_gray; k++) {
         framebuf[x + k * VFD_WIDTH] = ~framebuf[x + k * VFD_WIDTH];
       }
     }
@@ -284,7 +294,7 @@ void vfd_draw_inverse(u8 sx, u8 sy, u8 ex, u8 ey) {
 void vfd_draw_or_bg(u8 sx, u8 sy, u8 ex, u8 ey) {
   for (u8 x = sx; x < ex; x++) {
     if (sy == 0 && ey >= 7) {
-      for (u8 k = 0; k < 2; k++) {
+      for (u8 k = 0; k < 1; k++) {
         framebuf[x + k * VFD_WIDTH] |= 0xff;
       }
     }
@@ -295,38 +305,38 @@ void vfd_draw_or_bg(u8 sx, u8 sy, u8 ex, u8 ey) {
 static OS_STK vfd_task_stack[VFD_TASK_SIZE];
 
 void vfd_daemon(void *sdata) {
-  u8 dimm = 32;
-  u8 dimmdd = 2;
-  u8 dimmd = dimmdd;
+  // u8 dimm = 32;
+  // u8 dimmdd = 2;
+  // u8 dimmd = dimmdd;
   while (true) {
-#if (VFD_GRAY == 8)
-    if (vfd_mutex)
-      if (TLS_OS_ERROR == tls_os_mutex_acquire(vfd_mutex, 0))
-        printf("vfd mutex acquire failed\n");
-    // u16 r = rand();
-    for (u8 i = 0; i < VFD_GRAY; i++) {
-      for (u8 j = 0; j < VFD_GRAY; j++) {
-        // if (lut8[((j + r) % VFD_GRAY) * VFD_GRAY + i]) {
-        if (lut8[j * VFD_GRAY + i]) {
-          vfd_update_framebuf(j * VFD_WIDTH);
-          // tls_os_time_delay(1);
-        }
-      }
-      // r = (r << 1) | (r >> 15);
-    }
-    if (vfd_mutex)
-      tls_os_mutex_release(vfd_mutex);
-#else
+// #if (vfd_gray == 8)
+//     if (vfd_mutex)
+//       if (TLS_OS_ERROR == tls_os_mutex_acquire(vfd_mutex, 0))
+//         printf("vfd mutex acquire failed\n");
+//     // u16 r = rand();
+//     for (u8 i = 0; i < vfd_gray; i++) {
+//       for (u8 j = 0; j < vfd_gray; j++) {
+//         // if (lut8[((j + r) % vfd_gray) * vfd_gray + i]) {
+//         if (lut8[j * vfd_gray + i]) {
+//           vfd_update_framebuf(j * VFD_WIDTH);
+//           // tls_os_time_delay(1);
+//         }
+//       }
+//       // r = (r << 1) | (r >> 15);
+//     }
+//     if (vfd_mutex)
+//       tls_os_mutex_release(vfd_mutex);
+// #else
     // vfd_set_brightness(dimm);
-    dimm += dimmd;
-    if (dimm == 0) dimmd = dimmdd;
-    if (dimm == 256 - dimmdd) dimmd = -dimmdd;
-    for (u8 i = 0; i < VFD_GRAY; i++) {
-      // spi_write_reg(VFD_SET_DIMMING_DATA, i * (255 / VFD_GRAY));
+    // dimm += dimmd;
+    // if (dimm == 0) dimmd = dimmdd;
+    // if (dimm == 256 - dimmdd) dimmd = -dimmdd;
+    for (u8 i = 0; i < vfd_gray; i++) {
+      // spi_write_reg(VFD_SET_DIMMING_DATA, i * (255 / vfd_gray));
       vfd_update_framebuf(i * VFD_WIDTH);
-      tls_os_time_delay(1);
+      tls_os_time_delay(vfd_gray > 8 ? 0 : 1);
     }
-#endif
+// #endif
   }
 }
 
@@ -352,4 +362,12 @@ void vfd_daemon_start() {
 
 int vfd_daemon_running() {
   return daemon_running;
+}
+
+u8 vfd_gray_level(void) {
+  return vfd_gray;
+}
+
+void vfd_set_gray(u8 gray) {
+  vfd_gray = gray;
 }
