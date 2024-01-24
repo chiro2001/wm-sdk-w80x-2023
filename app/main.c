@@ -31,9 +31,11 @@ typedef enum {
   MODE_SETTING_BRIGHTNESS,
   MODE_SETTING_NTP,
   MODE_TEST_GRAY,
+  MODE_SHOW_DATE_TIME,
 } mode_t;
 
 typedef enum {
+  SETTING_DATE,
   SETTING_INFO,
   SETTING_WEBCFG,
   SETTING_BRIGHTNESS,
@@ -72,6 +74,9 @@ void setting_item_str(setting_item_t item, char *str) {
   switch (item) {
   case SETTING_BACK:
     strcpy(str, "Go Back ");
+    break;
+  case SETTING_DATE:
+    strcpy(str, "Show:Date Time");
     break;
   case SETTING_INFO:
     strcpy(str, "Set:Show INFO");
@@ -294,7 +299,7 @@ void user_main_loop(void) {
       tls_os_time_delay(90);
       if (btn && !btn_) {
         mode = MODE_DISPLAY_UPDATE;
-        setting_item = SETTING_INFO;
+        setting_item = SETTING_DATE;
         update_next = MODE_SETTING;
         i = 0;
         setting_item_str(SETTING_INFO, now);
@@ -322,7 +327,7 @@ void user_main_loop(void) {
           setting_item_t setting_item_last = setting_item;
           setting_item++;
           if (setting_item > SETTING_BACK)
-            setting_item = SETTING_INFO;
+            setting_item = SETTING_DATE;
           if (setting_item != setting_item_last) {
             // printf("goto setting_item %d\n", setting_item);
             i = 0;
@@ -361,6 +366,9 @@ void user_main_loop(void) {
             break;
           case SETTING_TEST_GRAY:
             mode = MODE_TEST_GRAY;
+            break;
+          case SETTING_DATE:
+            mode = MODE_SHOW_DATE_TIME;
             break;
           }
           i = 0;
@@ -507,6 +515,27 @@ void user_main_loop(void) {
         }
         i = 1;
       }
+      if (btn && !btn_) {
+        mode = MODE_DISPLAY_TIME;
+        i = 0;
+      }
+    } else if (mode == MODE_SHOW_DATE_TIME) {
+      tls_get_rtc(&tm);
+      strftime(buf, sizeof(buf), "%c", &tm);
+
+      if (i < 32 * 4) {
+        strcpy(now, buf);
+      } else if (i < 32 * (4 + strlen(buf) - 7)) {
+        strcpy(now, buf + ((i / 32) - 4));
+      } else {
+        strcpy(now, buf + strlen(buf) - 8);
+      }
+      vfd_draw_str(0, 0, now);
+      i++;
+      if (i >= 32 * (strlen(buf) + 8 - 7)) {
+        i = 0;
+      }
+
       if (btn && !btn_) {
         mode = MODE_DISPLAY_TIME;
         i = 0;
