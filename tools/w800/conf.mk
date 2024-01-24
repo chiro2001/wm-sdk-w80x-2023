@@ -54,7 +54,7 @@ else
 PRIKEY_SEL := $(shell expr $(CONFIG_W800_PRIKEY_SEL) + 1)
 endif
 
-optimization ?= -O2
+optimization ?= -O3
 
 ifeq ($(CONFIG_W800_FIRMWARE_DEBUG),y)
 optimization += -g -DWM_SWD_ENABLE=1

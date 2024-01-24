@@ -29,15 +29,29 @@ RST- PB15
 
 // options
 #define VFD_DIGITS 8
-#define VFD_DIMMING 128
+#define VFD_WIDTH (VFD_DIGITS * 5)
+#define VFD_DIMMING (32 - 1)
 #define VFD_SPI_CLK 100000
 // #define VFD_SPI_CLK SPI_DEFAULT_SPEED
+#define VFD_GRAY 7
+#define VFD_FRAME_SZ (VFD_DIGITS * VFD_GRAY)
 
 void vfd_display_str(u8 addr, const char *str);
 void vfd_clear(void);
+void vfd_set_brightness(u8 brightness);
+void vfd_set_brightness_lock(int brightness);
 void vfd_write_data(u8 addr, u8 *data, u8 len);
 void vfd_on(void);
 void vfd_off(void);
 void vfd_init(void);
+void vfd_update_framebuf(u16 offset);
+void vfd_set_direction(u8 direction);
+void vfd_draw_char(u8 x, int y, char ch);
+void vfd_draw_str(u8 x, int y, const char *str);
+void vfd_daemon_start();
+int vfd_daemon_running();
+void vfd_draw_pixel(u8 x, u8 y, u8 color);
+void vfd_draw_inverse(u8 sx, u8 sy, u8 ex, u8 ey);
+void vfd_draw_or_bg(u8 sx, u8 sy, u8 ex, u8 ey);
 
 #endif

@@ -34,7 +34,7 @@
 #define DEMO_GPIO					(DEMO_OFF && DEMO_CONSOLE)
 
 //flash demo
-#define DEMO_FLASH					(DEMO_OFF && DEMO_CONSOLE)
+#define DEMO_FLASH					(DEMO_ON && DEMO_CONSOLE)
 
 //master spi demo
 #define DEMO_MASTER_SPI				(DEMO_OFF && DEMO_CONSOLE)
@@ -46,7 +46,7 @@
 #define DEMO_RSA					(DEMO_OFF && DEMO_CONSOLE)
 
 //rtc demo
-#define DEMO_RTC					(DEMO_OFF && DEMO_CONSOLE)
+#define DEMO_RTC					(DEMO_ON && DEMO_CONSOLE)
 
 //timer demo
 #define DEMO_TIMER					(DEMO_OFF && DEMO_CONSOLE)

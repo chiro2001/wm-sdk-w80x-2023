@@ -47,7 +47,7 @@ def monitor():
         do_reset()
         while True:
             data = port.read_all()
-            print(data.decode(), end='')
+            print(data.decode(errors='ignore'), end='', flush=True)
             if kb.kbhit():
                 c = kb.getch()
                 d = ord(c)
