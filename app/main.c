@@ -59,7 +59,7 @@ typedef struct {
 extern u8 gucssidData[33];
 extern u8 gucpwdData[65];
 
-#define FLASH_CONFIG_ADDR 0x1F1000
+#define FLASH_CONFIG_ADDR 0x1F0303
 // #define FLASH_CONFIG_ADDR 0X1FF04000
 // #define FLASH_CONFIG_ADDR 0X0fffff00
 #define CONFIG_MAGIC 0x55aa
@@ -68,7 +68,7 @@ extern u8 gucpwdData[65];
   .passwd = "2001106504B",  \
   .dimm = VFD_DIMMING,      \
   .direction = 1,           \
-  .gray_level = 8,          \
+  .gray_level = 6,          \
   .magic = CONFIG_MAGIC,    \
 }
 const static config_t g_config_def = CONFIG_DEFAULT;
@@ -156,12 +156,38 @@ void setup_button_int(void) {
   // printf("test gpio %d rising isr\n", gpio_pin);
 }
 
+int check_str_ascii(const char *str, int len) {
+  for (int i = 0; i < len; i++) {
+    if (str[i] == 0 && i != 0) {
+      break;
+    }
+    if (str[i] < 0x20 || str[i] > 0x7e) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int check_config_valid() {
+  if (g_config.magic != CONFIG_MAGIC) {
+    return 1;
+  }
+  // check ssid & passwd in ascii
+  if (check_str_ascii(g_config.ssid, sizeof(g_config.ssid))) {
+    return 1;
+  }
+  if (check_str_ascii(g_config.passwd, sizeof(g_config.passwd))) {
+    return 1;
+  }  
+  return 0;
+}
+
 void do_config_load() {
   int r;
   if (TLS_FLS_STATUS_OK != (r = tls_fls_read(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(g_config)))) {
     printf("flash read failed: %d\n", r);
   }
-  if (g_config.magic != CONFIG_MAGIC) {
+  if (check_config_valid()) {
     printf("g_config read failed, overwrite to 0x%x\n", FLASH_CONFIG_ADDR);
     memcpy(&g_config, &g_config_def, sizeof(g_config));
     if (TLS_FLS_STATUS_OK != (r = tls_fls_write(FLASH_CONFIG_ADDR, (u8 *)&g_config, sizeof(g_config)))) {
